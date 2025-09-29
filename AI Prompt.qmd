@@ -1,0 +1,41 @@
+---
+title: Assignment 04
+author:
+  - name: Bhargavi Manyala
+    affiliations:
+      - id: bu
+        name: Boston University
+        city: Boston
+        state: MA
+number-sections: true
+date: today
+date-modified: today
+date-format: long
+format:
+  html:
+    theme: cerulean
+    toc: true
+    toc-depth: 2
+engine: jupyter
+jupyter: assignment-04-kernel
+execute:
+  echo: true
+  eval: true
+  output: true
+  freeze: auto
+---
+
+::: {.callout}
+In the feature engineering lab, numeric columns are cast after dropping nulls. For variables like MIN_YEARS_EXPERIENCE, MAX_YEARS_EXPERIENCE, DURATION, SALARY_FROM, and SALARY, should these be cast to Float, Double, or Integer in Spark?
+:::
+
+* In Spark, the best choice is Double.
+* Why Double:
+* Spark ML standard: Spark's MLlib expects DoubleType for numeric features. Most transformers, estimators, and ML algorithms  work with Vector types that internally use Double.
+* Precision: Double provides 15-17 significant digits, which prevents rounding errors with large salary values (e.g., $150,000+). 
+* Float only has 7-digit precision, which can introduce precision loss.
+* Industry practice: Double is the default and most common choice in Spark data engineering and ML pipelines.
+
+* Why not the others:
+* Integer → Won't work if values have decimals (e.g., 2.5 years of experience) and truncates any fractional data. Also limited range for very large salaries.
+* Float → Uses less memory but the precision trade-off isn't worth it. Can cause rounding errors in calculations and isn't the expected format for Spark ML.*
