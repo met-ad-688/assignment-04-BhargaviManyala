@@ -26,16 +26,129 @@ execute:
 ---
 
 ::: {.callout}
-In the feature engineering lab, numeric columns are cast after dropping nulls. For variables like MIN_YEARS_EXPERIENCE, MAX_YEARS_EXPERIENCE, DURATION, SALARY_FROM, and SALARY, should these be cast to Float, Double, or Integer in Spark?
+explain Random Forest Regressor in detail
 :::
 
-* In Spark, the best choice is Double.
-* Why Double:
-* Spark ML standard: Spark's MLlib expects DoubleType for numeric features. Most transformers, estimators, and ML algorithms  work with Vector types that internally use Double.
-* Precision: Double provides 15-17 significant digits, which prevents rounding errors with large salary values (e.g., $150,000+). 
-* Float only has 7-digit precision, which can introduce precision loss.
-* Industry practice: Double is the default and most common choice in Spark data engineering and ML pipelines.
+What is Random Forest Regressor?
+Random Forest Regressor is an ensemble learning method used for regression tasks (predicting continuous values). It builds multiple decision trees during training and outputs the average prediction of all individual trees.
 
-* Why not the others:
-* Integer → Won't work if values have decimals (e.g., 2.5 years of experience) and truncates any fractional data. Also limited range for very large salaries.
-* Float → Uses less memory but the precision trade-off isn't worth it. Can cause rounding errors in calculations and isn't the expected format for Spark ML.*
+* Core Concepts
+1. Ensemble Learning
+Instead of relying on a single decision tree (which can overfit), Random Forest combines many trees to create a more robust and accurate model. This is called "wisdom of the crowds."
+2. Bootstrap Aggregating (Bagging)
+Each tree is trained on a different random subset of the training data, created by:
+
+* Sampling with replacement (bootstrap sampling)
+Some data points may appear multiple times, others not at all
+Typically, each tree sees about 63% of unique training samples
+
+3. Feature Randomness
+At each split in every tree, Random Forest:
+
+Only considers a random subset of features (not all features)
+Default: √(total features) for classification, or (total features)/3 for regression
+This decorrelates the trees, making them more independent
+
+
+* How It Works
+Training Phase:
+
+Create bootstrap samples: Generate N different random samples from training data (with replacement)
+Build N decision trees: For each sample, grow a decision tree where:
+
+At each node, randomly select a subset of features
+Choose the best split among those features only
+Grow tree to maximum depth (or until stopping criteria)
+
+
+Store all trees: Keep all N trees in the "forest"
+
+* Prediction Phase:
+
+Pass input through all trees: Each tree makes its own prediction
+Aggregate predictions: Average all tree outputs for the final prediction
+
+   Final Prediction = (Tree1 + Tree2 + ... + TreeN) / N
+
+* Key Hyperparameters
+n_estimators (numTrees in Spark)
+
+Number of trees in the forest
+More trees = better performance but slower training
+Typical range: 100-500
+Trade-off: Accuracy vs computation time
+
+max_depth (maxDepth in Spark)
+
+Maximum depth of each tree
+Controls model complexity
+Too deep: Overfitting
+Too shallow: Underfitting
+Typical range: 5-30
+
+min_samples_split (minInstancesPerNode in Spark)
+
+Minimum samples required to split a node
+Higher values prevent overfitting
+Typical range: 2-20
+
+max_features (featureSubsetStrategy in Spark)
+
+Number of features to consider at each split
+"auto" or "sqrt": √(n_features)
+"log2": log₂(n_features)
+Lower values = more randomness, less correlation between trees
+
+min_samples_leaf
+
+Minimum samples required at leaf nodes
+Smooths predictions, prevents overfitting
+
+* Feature Importance
+Random Forest provides feature importance scores based on:
+
+Mean Decrease in Impurity (MDI): How much each feature decreases impurity (variance for regression) across all trees
+Features used in early splits or that reduce variance significantly get higher scores
+
+```{python}
+#| echo: true
+#| eval: false
+#| 
+# In sklearn
+importances = model.feature_importances_
+
+# In Spark
+model.featureImportances
+```
+
+```{python}
+#| echo: true
+#| eval: false
+#| 
+from pyspark.ml.regression import RandomForestRegressor
+from pyspark.ml.evaluation import RegressionEvaluator
+
+# Initialize model
+rf = RandomForestRegressor(
+    featuresCol="features",
+    labelCol="label",
+    numTrees=100,           # Number of trees
+    maxDepth=10,            # Max depth of each tree
+    minInstancesPerNode=1,  # Min samples per node
+    featureSubsetStrategy="auto",  # Features per split
+    seed=42
+)
+
+# Train model
+model = rf.fit(train_data)
+
+# Make predictions
+predictions = model.transform(test_data)
+
+# Evaluate
+evaluator = RegressionEvaluator(labelCol="label", metricName="rmse")
+rmse = evaluator.evaluate(predictions)
+
+# Feature importance
+print(model.featureImportances)
+```

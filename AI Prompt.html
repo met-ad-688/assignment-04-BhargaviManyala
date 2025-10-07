@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 <meta name="author" content="Bhargavi Manyala">
-<meta name="dcterms.date" content="2025-09-29">
+<meta name="dcterms.date" content="2025-10-07">
 
 <title>Assignment 04</title>
 <style>
@@ -21,6 +21,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 </style>
 
@@ -73,14 +107,14 @@ ul.task-list li input[type="checkbox"] {
     <div>
     <div class="quarto-title-meta-heading">Published</div>
     <div class="quarto-title-meta-contents">
-      <p class="date">September 29, 2025</p>
+      <p class="date">October 7, 2025</p>
     </div>
   </div>
   
     <div>
     <div class="quarto-title-meta-heading">Modified</div>
     <div class="quarto-title-meta-contents">
-      <p class="date-modified">September 29, 2025</p>
+      <p class="date-modified">October 7, 2025</p>
     </div>
   </div>
     
@@ -97,21 +131,87 @@ ul.task-list li input[type="checkbox"] {
 <i class="callout-icon no-icon"></i>
 </div>
 <div class="callout-body-container">
-<p>In the feature engineering lab, numeric columns are cast after dropping nulls. For variables like MIN_YEARS_EXPERIENCE, MAX_YEARS_EXPERIENCE, DURATION, SALARY_FROM, and SALARY, should these be cast to Float, Double, or Integer in Spark?</p>
+<p>explain Random Forest Regressor in detail</p>
 </div>
 </div>
 </div>
+<p>What is Random Forest Regressor? Random Forest Regressor is an ensemble learning method used for regression tasks (predicting continuous values). It builds multiple decision trees during training and outputs the average prediction of all individual trees.</p>
 <ul>
-<li><p>In Spark, the best choice is Double.</p></li>
-<li><p>Why Double:</p></li>
-<li><p>Spark ML standard: Spark’s MLlib expects DoubleType for numeric features. Most transformers, estimators, and ML algorithms work with Vector types that internally use Double.</p></li>
-<li><p>Precision: Double provides 15-17 significant digits, which prevents rounding errors with large salary values (e.g., $150,000+).</p></li>
-<li><p>Float only has 7-digit precision, which can introduce precision loss.</p></li>
-<li><p>Industry practice: Double is the default and most common choice in Spark data engineering and ML pipelines.</p></li>
-<li><p>Why not the others:</p></li>
-<li><p>Integer → Won’t work if values have decimals (e.g., 2.5 years of experience) and truncates any fractional data. Also limited range for very large salaries.</p></li>
-<li><p>Float → Uses less memory but the precision trade-off isn’t worth it. Can cause rounding errors in calculations and isn’t the expected format for Spark ML.*</p></li>
+<li>Core Concepts</li>
 </ul>
+<ol type="1">
+<li>Ensemble Learning Instead of relying on a single decision tree (which can overfit), Random Forest combines many trees to create a more robust and accurate model. This is called “wisdom of the crowds.”</li>
+<li>Bootstrap Aggregating (Bagging) Each tree is trained on a different random subset of the training data, created by:</li>
+</ol>
+<ul>
+<li>Sampling with replacement (bootstrap sampling) Some data points may appear multiple times, others not at all Typically, each tree sees about 63% of unique training samples</li>
+</ul>
+<ol start="3" type="1">
+<li>Feature Randomness At each split in every tree, Random Forest:</li>
+</ol>
+<p>Only considers a random subset of features (not all features) Default: √(total features) for classification, or (total features)/3 for regression This decorrelates the trees, making them more independent</p>
+<ul>
+<li>How It Works Training Phase:</li>
+</ul>
+<p>Create bootstrap samples: Generate N different random samples from training data (with replacement) Build N decision trees: For each sample, grow a decision tree where:</p>
+<p>At each node, randomly select a subset of features Choose the best split among those features only Grow tree to maximum depth (or until stopping criteria)</p>
+<p>Store all trees: Keep all N trees in the “forest”</p>
+<ul>
+<li>Prediction Phase:</li>
+</ul>
+<p>Pass input through all trees: Each tree makes its own prediction Aggregate predictions: Average all tree outputs for the final prediction</p>
+<p>Final Prediction = (Tree1 + Tree2 + … + TreeN) / N</p>
+<ul>
+<li>Key Hyperparameters n_estimators (numTrees in Spark)</li>
+</ul>
+<p>Number of trees in the forest More trees = better performance but slower training Typical range: 100-500 Trade-off: Accuracy vs computation time</p>
+<p>max_depth (maxDepth in Spark)</p>
+<p>Maximum depth of each tree Controls model complexity Too deep: Overfitting Too shallow: Underfitting Typical range: 5-30</p>
+<p>min_samples_split (minInstancesPerNode in Spark)</p>
+<p>Minimum samples required to split a node Higher values prevent overfitting Typical range: 2-20</p>
+<p>max_features (featureSubsetStrategy in Spark)</p>
+<p>Number of features to consider at each split “auto” or “sqrt”: √(n_features) “log2”: log₂(n_features) Lower values = more randomness, less correlation between trees</p>
+<p>min_samples_leaf</p>
+<p>Minimum samples required at leaf nodes Smooths predictions, prevents overfitting</p>
+<ul>
+<li>Feature Importance Random Forest provides feature importance scores based on:</li>
+</ul>
+<p>Mean Decrease in Impurity (MDI): How much each feature decreases impurity (variance for regression) across all trees Features used in early splits or that reduce variance significantly get higher scores</p>
+<div id="2bbaa211" class="cell" data-execution_count="1">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># In sklearn</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>importances <span class="op">=</span> model.feature_importances_</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># In Spark</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a>model.featureImportances</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<div id="33e2bd79" class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyspark.ml.regression <span class="im">import</span> RandomForestRegressor</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pyspark.ml.evaluation <span class="im">import</span> RegressionEvaluator</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Initialize model</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>rf <span class="op">=</span> RandomForestRegressor(</span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    featuresCol<span class="op">=</span><span class="st">"features"</span>,</span>
+<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    labelCol<span class="op">=</span><span class="st">"label"</span>,</span>
+<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>    numTrees<span class="op">=</span><span class="dv">100</span>,           <span class="co"># Number of trees</span></span>
+<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>    maxDepth<span class="op">=</span><span class="dv">10</span>,            <span class="co"># Max depth of each tree</span></span>
+<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>    minInstancesPerNode<span class="op">=</span><span class="dv">1</span>,  <span class="co"># Min samples per node</span></span>
+<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>    featureSubsetStrategy<span class="op">=</span><span class="st">"auto"</span>,  <span class="co"># Features per split</span></span>
+<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>    seed<span class="op">=</span><span class="dv">42</span></span>
+<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a><span class="co"># Train model</span></span>
+<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> rf.fit(train_data)</span>
+<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="co"># Make predictions</span></span>
+<span id="cb2-19"><a href="#cb2-19" aria-hidden="true" tabindex="-1"></a>predictions <span class="op">=</span> model.transform(test_data)</span>
+<span id="cb2-20"><a href="#cb2-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-21"><a href="#cb2-21" aria-hidden="true" tabindex="-1"></a><span class="co"># Evaluate</span></span>
+<span id="cb2-22"><a href="#cb2-22" aria-hidden="true" tabindex="-1"></a>evaluator <span class="op">=</span> RegressionEvaluator(labelCol<span class="op">=</span><span class="st">"label"</span>, metricName<span class="op">=</span><span class="st">"rmse"</span>)</span>
+<span id="cb2-23"><a href="#cb2-23" aria-hidden="true" tabindex="-1"></a>rmse <span class="op">=</span> evaluator.evaluate(predictions)</span>
+<span id="cb2-24"><a href="#cb2-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb2-25"><a href="#cb2-25" aria-hidden="true" tabindex="-1"></a><span class="co"># Feature importance</span></span>
+<span id="cb2-26"><a href="#cb2-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(model.featureImportances)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
 
 </main>
 <!-- /main column -->
